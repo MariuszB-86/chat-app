@@ -9,6 +9,13 @@ const addMessageForm = document.querySelector('#add-messages-form');
 const userNameInput = document.querySelector('#username');
 const messageContentInput = document.querySelector('#message-content');
 
+const socket = io();
+
+// listeners
+socket.on('message', ({ author, content }) => addMessage(author, content))
+socket.on('newUser', ({ author, content }) => addMessage(author, content))
+socket.on('removeUser', ({ author, content }) => addMessage(author, content))
+
 const login = function (e){
   e.preventDefault();
   
@@ -16,6 +23,7 @@ const login = function (e){
     userName = userNameInput.value;
     loginForm.classList.remove('show');
     messagesSection.classList.add('show');
+    socket.emit('join', { name: userName, id: socket.id });
   }
   else alert('Incorrect login!');
 };
@@ -34,15 +42,20 @@ const addMessage = function (author, content){
   messagesList.appendChild(message);
 }
 
-const sendMessage = function (e){
+function sendMessage(e) {
   e.preventDefault();
 
-  if(messageContentInput.value){
-    addMessage(userName, messageContentInput.value);
+  let messageContent = messageContentInput.value;
+
+  if(!messageContent.length) {
+    alert('You have to type something!');
+  }
+  else {
+    addMessage(userName, messageContent);
+    socket.emit('message', { author: userName, content: messageContent })
     messageContentInput.value = '';
   }
-  else alert("You can't send a empty message");
-};
+}
 
 loginForm.addEventListener('submit', login);
 addMessageForm.addEventListener('submit', sendMessage);
